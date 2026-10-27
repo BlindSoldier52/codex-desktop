@@ -618,6 +618,36 @@ class LogPage(wx.Panel):
 		self.window.worker.run(self.window.client.log, done)
 
 
+class UsagePage(wx.Panel):
+	def __init__(self, parent, window):
+		super().__init__(parent)
+		self.window = window
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		intro = wx.StaticText(self, label=(
+			"These are the limits of the ChatGPT account that Codex uses. Every task uses part of them, "
+			"and longer tasks, higher thinking levels and Fast speed use more."
+		))
+		intro.Wrap(600)
+		sizer.Add(intro, 0, wx.ALL, 8)
+		self.text = labelled(self, sizer, "&Usage limits", lambda: wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2))
+		refresh = wx.Button(self, label="&Refresh")
+		refresh.Bind(wx.EVT_BUTTON, lambda event: self.load())
+		sizer.Add(refresh, 0, wx.ALL, 8)
+		self.SetSizer(sizer)
+
+	def load(self):
+		def done(result):
+			lines = result.get("lines") or []
+			if lines:
+				lines = lines + [f"Checked at {when(result.get('updated'))}."]
+				self.window.set_status(lines[0])
+			else:
+				lines = ["The usage limits could not be read from Codex right now. Try again in a minute."]
+			self.text.SetValue("\n".join(lines))
+
+		self.window.worker.run(self.window.client.usage, done)
+
+
 OPTION_LABELS = (
 	("model", "&Model"),
 	("effort", "&Thinking level"),
@@ -788,8 +818,9 @@ class MainWindow(wx.Frame):
 		self.files = FilesPage(self.notebook, self)
 		self.repos = ReposPage(self.notebook, self)
 		self.log = LogPage(self.notebook, self)
+		self.usage = UsagePage(self.notebook, self)
 		self.settings = SettingsPage(self.notebook, self)
-		for page, label in ((self.tasks, "Tasks"), (self.files, "Files"), (self.repos, "Repositories"), (self.log, "Log"), (self.settings, "Settings")):
+		for page, label in ((self.tasks, "Tasks"), (self.files, "Files"), (self.repos, "Repositories"), (self.log, "Log"), (self.usage, "Usage"), (self.settings, "Settings")):
 			self.notebook.AddPage(page, label)
 		self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page)
 		self.loaded = set()
@@ -810,7 +841,7 @@ class MainWindow(wx.Frame):
 
 	def load_page(self, index):
 		page = self.notebook.GetPage(index)
-		if index not in self.loaded:
+		if index not in self.loaded or page is self.usage:
 			self.loaded.add(index)
 			page.load()
 

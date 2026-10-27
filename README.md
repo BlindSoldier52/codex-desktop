@@ -29,7 +29,7 @@ The main window opens, and from now on the app remembers that the computer is pa
 
 ## 3. The main window
 
-The main window has five tabs. Press Control Tab to move between them. Every field and list has a shortcut, shown as an underlined letter, so Alt and that letter jumps straight to it.
+The main window has six tabs. Press Control Tab to move between them. Every field and list has a shortcut, shown as an underlined letter, so Alt and that letter jumps straight to it.
 
 ### 3.1 Tasks
 
@@ -71,7 +71,21 @@ Remove key: deletes the key of the selected repository from the server, then off
 
 This tab shows the same log as the website, newest first, with sign-ins, tasks, uploads and device changes. Select Refresh to reload it.
 
-### 3.5 Settings
+### 3.5 Usage
+
+This tab shows how much of the ChatGPT account limits Codex has used, the same as the Usage page on the website. The app checks them again every time you open the tab, so they are always fresh. Every task uses part of the limits, and longer tasks, higher thinking levels and Fast speed use more.
+
+Usage limits: a box you can read with the arrow keys, with one line for each limit. Alt U. An example looks like this.
+
+5-hour limit: 22% used, 78% left. It resets on Wednesday 28 October at 02:31, in 2 hours and 9 minutes.
+Weekly limit: 7% used, 93% left. It resets on Tuesday 03 November at 03:23, in 6 days and 3 hours.
+Plan: ChatGPT Plus.
+
+Refresh: checks the limits again. Alt R.
+
+Codex has two limits on a Plus account. The 5-hour limit is a short window, so if you use it up, you only wait a few hours. The weekly limit is the bigger one, and when it is used up, Codex stops until it resets. There is no daily limit. If a limit is reached, the tab says so on the first line. If you have credits or reset credits on your account, it shows them too.
+
+### 3.6 Settings
 
 This tab has the same settings as the Settings page on the website, and changing them in one place changes them in the other. The lists of models and thinking levels come from Codex on the server, so they stay up to date when OpenAI adds new models. Every list starts with a default choice, which leaves the decision to Codex.
 

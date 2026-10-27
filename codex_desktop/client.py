@@ -139,6 +139,9 @@ class Client:
 	def remove_repo(self, name):
 		return self.request("DELETE", f"/api/repos/{quote(name)}")
 
+	def usage(self):
+		return self.request("GET", "/api/usage")
+
 	def log(self):
 		return self.request("GET", "/api/log")["events"]
 
