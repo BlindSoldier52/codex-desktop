@@ -94,46 +94,43 @@ class PairDialog(wx.Dialog):
 		code = self.code.GetValue().strip()
 		name = self.name.GetValue().strip() or socket.gethostname()
 		if not code:
-			self.say("Type the pairing code first.")
-			self.code.SetFocus()
+			self.warn("Type the pairing code first.")
 			return
 		self.pair_button.Disable()
 		self.say("Pairing, please wait.")
+		threading.Thread(target=self.pair, args=(server, code, name), daemon=True).start()
 
-		def job():
+	def pair(self, server, code, name):
+		try:
 			client = Client(server)
 			result = client.pair(code, name)
 			Pairing().save(client.server, result["token"], result["name"])
-			return client
+		except ServerError as error:
+			wx.CallAfter(self.fail, error.message)
+			return
+		except OSError as error:
+			wx.CallAfter(self.fail, f"The pairing could not be saved on this computer: {error}")
+			return
+		wx.CallAfter(self.finish, client)
 
-		def done(client):
-			self.result = client
-			self.EndModal(wx.ID_OK)
+	def finish(self, client):
+		self.result = client
+		self.EndModal(wx.ID_OK)
 
-		def failed(message):
-			self.pair_button.Enable()
-			self.say(message)
-			self.code.SetFocus()
-
-		def target():
-			try:
-				client = job()
-			except ServerError as error:
-				wx.CallAfter(failed, error.message)
-				return
-			except OSError as error:
-				wx.CallAfter(failed, f"The pairing could not be saved on this computer: {error}")
-				return
-			wx.CallAfter(done, client)
-
-		threading.Thread(target=target, daemon=True).start()
+	def fail(self, message):
+		self.pair_button.Enable()
+		self.warn(message)
 
 	def say(self, text):
 		self.message.SetLabel(text)
 		self.message.Wrap(460)
 		self.Layout()
 		self.Fit()
-		wx.MessageBox(text, APP_NAME, wx.OK | wx.ICON_INFORMATION, self) if text != "Pairing, please wait." else None
+
+	def warn(self, text):
+		self.say(text)
+		wx.MessageBox(text, APP_NAME, wx.OK | wx.ICON_INFORMATION, self)
+		self.code.SetFocus()
 
 
 class TaskDialog(wx.Dialog):
