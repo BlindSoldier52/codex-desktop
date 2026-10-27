@@ -8,11 +8,13 @@ Your GitHub account never goes on the server. Instead, every project gets its ow
 
 The keys are stored inside the website's encrypted database. When the website starts, it unlocks them into a folder that lives only in the server's memory, so they are never written to the disk in plain form, and they disappear when the server shuts down.
 
-The address of the repository is a little different from the one GitHub shows you. Instead of `git@github.com:yourname/myproject.git` you use `git@github-myproject:yourname/myproject.git`, and that small change is what tells the server which key to use. The website shows you the right address, so you do not have to build it yourself.
+The address that tells the server which key to use is a little different from the one GitHub shows you. Instead of `git@github.com:yourname/myproject.git` it is `git@github-myproject:yourname/myproject.git`, and the website shows it to you, so you do not have to build it yourself.
+
+You do not have to remember it, though. Once a repository has a key, the server also accepts the normal GitHub addresses, such as `https://github.com/yourname/myproject.git`, and quietly swaps them for the address with the key. This also works for a project Codex already cloned with the normal address. Without a key, Codex can still download a public repository, but it cannot send changes back, because the server has no GitHub password.
 
 ## 2. Before you start
 
-You need a repository on GitHub that you own or can manage, because adding a deploy key needs access to the repository settings. You also need to be signed in to the Codex website.
+You need a repository on GitHub that you own or can manage, because adding a deploy key needs access to the repository settings. If the repository belongs to someone else, they have to add the key for you, or make you an administrator of it. You also need to be signed in to the Codex website.
 
 ## 3. Adding a project
 
@@ -41,7 +43,7 @@ The key works straight away, so you can go back to the Codex tab and start a tas
 
 ## 4. Working with Codex
 
-You talk to Codex in the task box on the Tasks page, the same as before. The only thing to remember is to give it the special address, which you can copy with the Copy address button on the Repositories page.
+You talk to Codex in the task box on the Tasks page, the same as before. You can give it the address from the Repositories page, which you copy with the Copy address button, or the normal GitHub address. Both work once the repository has a key.
 
 The first time you work on a project, Codex needs to download it. A good first task looks like this:
 
@@ -57,7 +59,7 @@ Codex works directly on main, so its changes reach your main code as soon as it 
 
 If you ever want to look at a change before it reaches main, ask Codex to push it on a new branch instead, for example "commit it on a new branch called volume-option and push the branch". On GitHub you can then open a pull request from that branch, read exactly what changed, and merge it only if you are happy with it.
 
-The commits that Codex makes appear under the name Codex, so you can always tell its changes apart from yours.
+The commits that Codex makes appear under the name Codex, with the address codex@codex.gaming-space.site, so you can always tell its changes apart from yours. The only exception is a project where a name was set inside the project itself, because that name wins.
 
 ## 5. Managing projects
 
@@ -83,6 +85,7 @@ The plain ssh command: running `ssh -T github-myproject` by hand inside a task d
 
 Most problems show up as a message from Git in the Codex answer. I will list the common ones with what they mean.
 
+Could not read Username for 'https://github.com': the repository has no key on the Repositories page, so the server has no way to sign in to GitHub. Create a key for it and add it on GitHub, then ask Codex to push again. Its commits are kept in the working folder in the meantime, so nothing is lost.
 Permission denied (publickey): GitHub did not accept the key. Usually the key was not added to the repository yet, or it was added to a different repository.
 The key you are authenticating with has been marked as read only: the key works, but Allow write access was not ticked. Edit the key on GitHub, or remove it and add it again with the box ticked.
 Repository not found: the owner or the repository name in the address is wrong, or the key belongs to a different repository. Check the address on the Repositories page.
