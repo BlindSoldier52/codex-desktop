@@ -45,13 +45,17 @@ You talk to Codex in the task box on the Tasks page, the same as before. The onl
 
 The first time you work on a project, Codex needs to download it. A good first task looks like this:
 
-"Clone git@github-myproject:yourname/myproject.git, then fix the bug where the settings menu does not save. Commit the change on a new branch called fix-settings and push the branch."
+"Clone git@github-myproject:yourname/myproject.git, then fix the bug where the settings menu does not save. Commit the change on main and push it."
 
 The next times, the project is already in the working folder, so you can start from it:
 
-"In the myproject folder, switch to main and pull the latest changes. Then add a volume option to the settings menu, commit it on a new branch called volume-option and push it."
+"In the myproject folder, pull the latest changes on main. Then add a volume option to the settings menu, commit it on main and push it."
 
-I recommend always asking Codex to push to a new branch instead of main. This way nothing reaches your main code until you have looked at it. On GitHub you can then open a pull request from that branch, read exactly what changed, and merge it only if you are happy with it. Alternatively, on your laptop, run `git fetch` and then `git checkout fix-settings` to try the branch locally.
+Asking Codex to pull first matters, because you may have pushed changes of your own since its last task. Without the pull, its push would be refused.
+
+Codex works directly on main, so its changes reach your main code as soon as it pushes them. To get them on your computer, you do not need to clone again. Run `git pull` in the folder you already cloned, or let Codex Desktop do it for you after every task. Section 4 of README.md explains how to set that up.
+
+If you ever want to look at a change before it reaches main, ask Codex to push it on a new branch instead, for example "commit it on a new branch called volume-option and push the branch". On GitHub you can then open a pull request from that branch, read exactly what changed, and merge it only if you are happy with it.
 
 The commits that Codex makes appear under the name Codex, so you can always tell its changes apart from yours.
 
@@ -68,7 +72,7 @@ Removing a key does not delete the project folder from the working folder. If yo
 
 ## 6. Things to know
 
-Write access: a key with write access lets Codex push to any branch of that repository, including main, if you tell it to or if it misunderstands a task. If you want GitHub itself to stop that, turn on branch protection for main in the repository settings, so changes to main can only arrive through a pull request.
+Write access: a key with write access lets Codex push to any branch of that repository, and because Codex works on main, a task it misunderstands also lands on main straight away. Every change stays in the Git history, though, so you can always ask Codex to undo a commit. Do not turn on branch protection for main that requires pull requests, because it would refuse every push from Codex.
 Your website password: anyone who signs in to the Codex website can create keys and use them through Codex. This is one more reason to keep a long password, and to consider the optional second password in front of the site.
 Codex can see the repository keys: Codex runs on the server as its own user, separate from the website, so it cannot read the website's database or the key that unlocks it. It can read the unlocked repository keys, though, because it needs them to reach GitHub, and this is why each key only opens one repository.
 One key per repository: GitHub does not allow the same deploy key on two repositories, which is why every project gets its own.

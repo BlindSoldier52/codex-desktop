@@ -42,7 +42,7 @@ Codex answer: the answer, which grows as Codex works. Alt A jumps here, and you 
 Previous tasks: the last 20 tasks. Select one and press Enter, or double-click it, to open a window with its details: the status with the times it was submitted and finished, your request, and the Codex answer. The window opens on the answer, so you can read it straight away, and Escape closes it. If the task is still running, Enter moves you to the Codex answer box instead, where the answer keeps growing. Alt P.
 Refresh previous tasks: reloads the list. Alt R.
 
-When a task finishes, the app plays a sound and shows the result in the status bar. If the window is not active, it also shows a Windows notification, so you can do something else while Codex works. If you close the app while a task runs, the task keeps running on the server, and the app follows it again the next time you open it.
+When a task finishes, the app plays a sound and shows the result in the status bar. If the window is not active, it also shows a Windows notification, so you can do something else while Codex works. If you added local projects in the Settings tab, the app then also brings the new changes from GitHub into them, as explained in section 4. If you close the app while a task runs, the task keeps running on the server, and the app follows it again the next time you open it.
 
 The answer box does not read new text aloud by itself, because Windows boxes do not announce text added to them. Instead, wait for the sound at the end, or move to the box and read what is there so far.
 
@@ -87,19 +87,54 @@ Reload settings: reads the settings again from the server, for example after you
 
 The Codex choices apply to new tasks. A task that is already running keeps the choices it started with until it finishes.
 
-## 4. Unpairing and lost computers
+Below these settings there is a second part for local projects, which is saved only on this computer and takes effect straight away, without Save settings. Section 4 explains what it is for.
+
+When a task finishes, update the local projects: when this is ticked, the app updates every local project after each task. It is ticked at the start. Alt W.
+Local projects: the folders on this computer that the app keeps up to date. Alt J.
+Add folder: asks for the folder where you cloned a repository, and adds it to the list. The app refuses folders that are not Git repositories. Alt A.
+Remove folder: removes the selected folder from the list. The folder itself and its files stay on your computer. Alt V.
+Update now: updates every local project straight away, even if the box above is not ticked. Alt O.
+
+## 4. Getting Codex changes on your computer
+
+When Codex works on one of your GitHub repositories, it sends its changes to GitHub, not to your computer. You do not have to clone the repository again to get them, because the app can bring them into the folder you already have.
+
+### 4.1 Setting it up once
+
+1. Clone the repository on your computer once, the normal way, for example with `git clone https://github.com/yourname/myproject.git`. This needs Git for Windows.
+2. Open the Settings tab, select Add folder, and choose the folder you cloned, for example `Documents\github\myproject`.
+3. Leave When a task finishes, update the local projects ticked.
+
+### 4.2 What happens after a task
+
+When a task finishes, after the end sound, the app runs `git pull` in every local project. If something new arrived, a window tells you what changed, for example "myproject got 2 new changes, 3 files changed, 10 insertions(+). Changes: Fix settings menu; Add volume option." If nothing changed, the app only writes that the project is up to date in the status bar, so it does not interrupt you. If the window is not active, you also get a Windows notification.
+
+The app always updates the branch that is open in your folder, which is normally `main`. Codex is told to work on `main` too, so the changes arrive in the branch you already use.
+
+### 4.3 If a project cannot be updated
+
+The app never mixes your changes with the ones from GitHub. If it cannot add the new changes safely, it leaves the folder exactly as it was and tells you why. I will list the common reasons.
+
+This computer has its own changes that are not on GitHub: you changed and committed files in the folder that Codex also changed. Send your changes to GitHub first with `git push`, or ask me for help.
+It is not a Git repository: the folder in the list is not a cloned repository, or the hidden .git folder was deleted.
+The folder no longer exists: the folder was moved or deleted. Remove it from the list and add it again from its new place.
+Git is not installed: install Git for Windows, then select Update now.
+
+If Git asks for your GitHub password, the update stops instead of waiting. This only happens with private repositories that were never opened on this computer, so run `git pull` once yourself in that folder and sign in when Git asks.
+
+## 5. Unpairing and lost computers
 
 If you stop using a computer, open the File menu and select Unpair this computer. The app tells the server to forget it and deletes the saved pairing, so you would need a new code to use it again.
 
 If you lose a computer, or think someone else has used it, open the Devices page on the website and select Remove device next to its name. It stops working straight away, even if the app is open. The next time that app tries to reach the server, it says that it is no longer paired and asks for a new code.
 
-## 5. Things to know
+## 6. Things to know
 
 Anyone who can sign in to your Windows account on a paired computer can use the app, because it does not ask for a password after pairing. If this computer is shared, lock Windows when you leave it, or unpair the app.
 The app talks to the server over an encrypted connection and checks the server's certificate, so it only connects to the real Codex server.
 The pairing codes are long enough that guessing one is not realistic, and the server also slows down repeated wrong attempts.
 
-## 6. Building the app again
+## 7. Building the app again
 
 You do not need to build anything on your computer. The app lives in a private repository on GitHub, and GitHub builds it with Nuitka every time the code changes, on a Windows machine of its own.
 

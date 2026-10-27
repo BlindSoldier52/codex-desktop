@@ -11,6 +11,7 @@ import wx
 import wx.adv
 
 from .client import Client, ServerError, Unpaired
+from .projects import Projects, is_repository, update_all
 from .storage import Pairing
 
 APP_NAME = "Codex Desktop"
@@ -284,6 +285,7 @@ class TasksPage(wx.Panel):
 		self.set_status(message)
 		self.window.notify(message)
 		self.load()
+		self.window.update_projects(automatic=True)
 
 	def on_stop(self, event):
 		if self.task_id is None:
@@ -657,7 +659,74 @@ class SettingsPage(wx.Panel):
 		row.Add(self.save, 0, wx.ALL, 4)
 		row.Add(reload_button, 0, wx.ALL, 4)
 		sizer.Add(row, 0, wx.ALL, 4)
+		sizer.Add(wx.StaticLine(self), 0, wx.EXPAND | wx.ALL, 8)
+		local_help = wx.StaticText(self, label=(
+			"Local projects are folders on this computer where you cloned a GitHub repository that Codex works on. "
+			"When a task finishes, the app brings the new changes from GitHub into these folders, so you do not have to clone again. "
+			"These settings are saved only on this computer, and they take effect straight away."
+		))
+		local_help.Wrap(600)
+		sizer.Add(local_help, 0, wx.ALL, 8)
+		self.automatic = wx.CheckBox(self, label="&When a task finishes, update the local projects")
+		self.automatic.Bind(wx.EVT_CHECKBOX, self.on_automatic)
+		sizer.Add(self.automatic, 0, wx.ALL, 8)
+		self.folders = labelled(self, sizer, "Local pro&jects", lambda: wx.ListBox(self, size=(-1, 100)), False)
+		local_row = wx.BoxSizer(wx.HORIZONTAL)
+		for label, handler in (
+			("&Add folder", self.on_add_folder),
+			("Remo&ve folder", self.on_remove_folder),
+			("Update n&ow", lambda event: self.window.update_projects(automatic=False)),
+		):
+			button = wx.Button(self, label=label)
+			button.Bind(wx.EVT_BUTTON, handler)
+			local_row.Add(button, 0, wx.ALL, 4)
+		sizer.Add(local_row, 0, wx.ALL, 4)
 		self.SetSizer(sizer)
+		self.show_projects()
+
+	def show_projects(self):
+		settings = self.window.projects.load()
+		self.automatic.SetValue(settings["automatic"])
+		self.folders.Set(settings["folders"] or ["No local projects yet."])
+
+	def change_projects(self, change):
+		settings = self.window.projects.load()
+		change(settings)
+		try:
+			self.window.projects.save(settings)
+		except OSError as error:
+			self.window.show_error(f"The local projects could not be saved on this computer: {error}")
+		self.show_projects()
+
+	def on_automatic(self, event):
+		value = self.automatic.GetValue()
+		self.change_projects(lambda settings: settings.update(automatic=value))
+		self.window.set_status("Local projects are updated when a task finishes." if value else "Local projects are only updated when you select Update now.")
+
+	def on_add_folder(self, event):
+		with wx.DirDialog(self, "Choose the folder of a cloned repository", style=wx.DD_DIR_MUST_EXIST) as dialog:
+			if dialog.ShowModal() != wx.ID_OK:
+				return
+			folder = dialog.GetPath()
+		if not is_repository(folder):
+			self.window.show_error(f"{folder} is not a Git repository, so it was not added. Choose the folder you cloned from GitHub, the one that contains the hidden .git folder.")
+			return
+		if folder in self.window.projects.load()["folders"]:
+			self.window.show_error(f"{folder} is already in the list.")
+			return
+		self.change_projects(lambda settings: settings["folders"].append(folder))
+		self.folders.SetSelection(len(self.window.projects.load()["folders"]) - 1)
+		self.window.set_status(f"{folder} was added to the local projects.")
+
+	def on_remove_folder(self, event):
+		folders = self.window.projects.load()["folders"]
+		index = self.folders.GetSelection()
+		if index == wx.NOT_FOUND or index >= len(folders):
+			self.window.show_error("Select a folder in the list first.")
+			return
+		folder = folders[index]
+		self.change_projects(lambda settings: settings["folders"].remove(folder))
+		self.window.set_status(f"{folder} was removed from the local projects. The folder itself was not deleted.")
 
 	def show(self, result):
 		self.details.SetValue(bool(result["details"]))
@@ -702,6 +771,8 @@ class MainWindow(wx.Frame):
 		super().__init__(None, title=APP_NAME, size=(900, 700))
 		self.client = client
 		self.max_upload = MAX_UPLOAD
+		self.projects = Projects()
+		self.updating = False
 		self.worker = Worker(self)
 		self.CreateStatusBar()
 		menu = wx.MenuBar()
@@ -756,6 +827,34 @@ class MainWindow(wx.Frame):
 			notification = wx.adv.NotificationMessage(APP_NAME, message, parent=self)
 			notification.Show(timeout=wx.adv.NotificationMessage.Timeout_Auto)
 			self.RequestUserAttention()
+
+	def update_projects(self, automatic):
+		settings = self.projects.load()
+		if automatic and not (settings["automatic"] and settings["folders"]):
+			return
+		if not settings["folders"]:
+			self.show_error("There are no local projects yet. Add one in the Settings tab first.")
+			return
+		if self.updating:
+			self.set_status("The local projects are already being updated.")
+			return
+		self.updating = True
+		self.set_status("Updating the local projects from GitHub.")
+
+		def done(result):
+			self.updating = False
+			text, important = result
+			self.set_status(text)
+			if important or not automatic:
+				if not self.IsActive():
+					self.notify(text)
+				wx.MessageBox(text, "Local projects", wx.OK | wx.ICON_INFORMATION, self)
+
+		def failed(message):
+			self.updating = False
+			self.show_error(message)
+
+		self.worker.run(lambda: update_all(settings["folders"]), done, failed)
 
 	def handle_unpaired(self, message):
 		Pairing().forget()
