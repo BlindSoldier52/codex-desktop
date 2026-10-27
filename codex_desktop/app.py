@@ -235,9 +235,12 @@ class TasksPage(wx.Panel):
 
 	def stream(self, task_id):
 		client = self.window.client
+		details = None
 		while not self.stop_stream:
 			try:
-				end = client.stream(task_id, self.received, self.on_output, lambda: self.stop_stream)
+				if details is None:
+					details = client.settings()["details"]
+				end = client.stream(task_id, self.received, details, self.on_output, lambda: self.stop_stream)
 			except Unpaired as error:
 				wx.CallAfter(self.window.handle_unpaired, error.message)
 				return
@@ -591,6 +594,49 @@ class LogPage(wx.Panel):
 		self.window.worker.run(self.window.client.log, done)
 
 
+class SettingsPage(wx.Panel):
+	def __init__(self, parent, window):
+		super().__init__(parent)
+		self.window = window
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		self.details = wx.CheckBox(self, label="Show technical &details in Codex answers")
+		sizer.Add(self.details, 0, wx.ALL, 8)
+		help_text = wx.StaticText(self, label=(
+			"When this is on, the answer also shows the session number, the commands Codex runs with their output, "
+			"and the number of tokens used. When it is off, you only see what Codex writes to you, and errors. "
+			"The setting is shared with the website. It also applies to earlier tasks, except those that ran before "
+			"this setting existed, which always show everything. A task that is already running keeps the old setting."
+		))
+		help_text.Wrap(600)
+		sizer.Add(help_text, 0, wx.ALL, 8)
+		self.save = wx.Button(self, label="&Save settings")
+		self.save.Bind(wx.EVT_BUTTON, self.on_save)
+		sizer.Add(self.save, 0, wx.ALL, 8)
+		self.SetSizer(sizer)
+
+	def load(self):
+		def done(result):
+			self.details.SetValue(bool(result["details"]))
+
+		self.window.worker.run(self.window.client.settings, done)
+
+	def on_save(self, event):
+		details = self.details.GetValue()
+		self.save.Disable()
+
+		def done(result):
+			self.save.Enable()
+			self.details.SetValue(bool(result["details"]))
+			self.window.set_status(result["message"])
+			wx.MessageBox(result["message"], APP_NAME, wx.OK | wx.ICON_INFORMATION, self)
+
+		def failed(message):
+			self.save.Enable()
+			self.window.show_error(message)
+
+		self.window.worker.run(lambda: self.window.client.save_settings(details), done, failed)
+
+
 class MainWindow(wx.Frame):
 	def __init__(self, client):
 		super().__init__(None, title=APP_NAME, size=(900, 700))
@@ -610,7 +656,8 @@ class MainWindow(wx.Frame):
 		self.files = FilesPage(self.notebook, self)
 		self.repos = ReposPage(self.notebook, self)
 		self.log = LogPage(self.notebook, self)
-		for page, label in ((self.tasks, "Tasks"), (self.files, "Files"), (self.repos, "Repositories"), (self.log, "Log")):
+		self.settings = SettingsPage(self.notebook, self)
+		for page, label in ((self.tasks, "Tasks"), (self.files, "Files"), (self.repos, "Repositories"), (self.log, "Log"), (self.settings, "Settings")):
 			self.notebook.AddPage(page, label)
 		self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page)
 		self.loaded = set()

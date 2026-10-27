@@ -90,16 +90,22 @@ class Client:
 	def task(self, task_id):
 		return self.request("GET", f"/api/tasks/{task_id}")
 
+	def settings(self):
+		return self.request("GET", "/api/settings")
+
+	def save_settings(self, details):
+		return self.request("PUT", "/api/settings", {"details": details})
+
 	def start(self, prompt):
 		return self.request("POST", "/api/tasks", {"prompt": prompt})["id"]
 
 	def stop(self, task_id):
 		return self.request("POST", f"/api/tasks/{task_id}/stop")["message"]
 
-	def stream(self, task_id, offset, on_output, should_stop):
+	def stream(self, task_id, offset, details, on_output, should_stop):
 		connection = self.connection(timeout=120)
 		try:
-			connection.request("GET", f"/api/tasks/{task_id}/stream?offset={offset}", headers=self.headers({"Accept": "text/event-stream"}))
+			connection.request("GET", f"/api/tasks/{task_id}/stream?offset={offset}&details={int(details)}", headers=self.headers({"Accept": "text/event-stream"}))
 			response = connection.getresponse()
 			self.check(response)
 			event = None

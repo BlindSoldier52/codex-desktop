@@ -29,7 +29,7 @@ The main window opens, and from now on the app remembers that the computer is pa
 
 ## 3. The main window
 
-The main window has four tabs. Press Control Tab to move between them. Every field and list has a shortcut, shown as an underlined letter, so Alt and that letter jumps straight to it.
+The main window has five tabs. Press Control Tab to move between them. Every field and list has a shortcut, shown as an underlined letter, so Alt and that letter jumps straight to it.
 
 ### 3.1 Tasks
 
@@ -70,6 +70,13 @@ Remove key: deletes the key of the selected repository from the server, then off
 ### 3.4 Log
 
 This tab shows the same log as the website, newest first, with sign-ins, tasks, uploads and device changes. Select Refresh to reload it.
+
+### 3.5 Settings
+
+This tab has the same setting as the Settings page on the website, and changing it in one place changes it in the other.
+
+Show technical details in Codex answers: when this is ticked, the answer also shows the session number, the commands Codex runs with their output, and the number of tokens used. When it is not ticked, you only see what Codex writes to you, and errors. Alt D jumps here.
+Save settings: saves the choice on the server. Alt S. A task that is already running keeps the old setting until it finishes.
 
 ## 4. Unpairing and lost computers
 
