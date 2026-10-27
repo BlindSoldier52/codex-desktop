@@ -136,6 +136,23 @@ class PairDialog(wx.Dialog):
 		wx.MessageBox(text, APP_NAME, wx.OK | wx.ICON_INFORMATION, self) if text != "Pairing, please wait." else None
 
 
+class TaskDialog(wx.Dialog):
+	def __init__(self, parent, task):
+		super().__init__(parent, title=f"Task {task['id']}", size=(760, 640), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		lines = [f"Task {task['id']} is {task['status_text']}.", f"Submitted at {when(task['created'])}."]
+		if task.get("finished"):
+			lines.append(f"Finished at {when(task['finished'])}.")
+		self.summary = labelled(self, sizer, "&Status", lambda: wx.TextCtrl(self, value=" ".join(lines), style=wx.TE_READONLY), False)
+		self.request = labelled(self, sizer, "&Request", lambda: wx.TextCtrl(self, value=task["prompt"], style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2, size=(-1, 110)), False)
+		self.answer = labelled(self, sizer, "Codex &answer", lambda: wx.TextCtrl(self, value=task["output"] or "", style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2))
+		close = wx.Button(self, wx.ID_CANCEL, "&Close")
+		sizer.Add(close, 0, wx.ALL | wx.ALIGN_RIGHT, 8)
+		self.SetSizer(sizer)
+		self.SetEscapeId(wx.ID_CANCEL)
+		self.answer.SetFocus()
+
+
 class TasksPage(wx.Panel):
 	def __init__(self, parent, window):
 		super().__init__(parent)
@@ -164,7 +181,7 @@ class TasksPage(wx.Panel):
 		self.stop.Bind(wx.EVT_BUTTON, self.on_stop)
 		self.refresh.Bind(wx.EVT_BUTTON, lambda event: self.load())
 		self.previous.Bind(wx.EVT_LISTBOX_DCLICK, self.on_open)
-		self.previous.Bind(wx.EVT_KEY_DOWN, self.on_previous_key)
+		self.previous.Bind(wx.EVT_CHAR_HOOK, self.on_previous_key)
 
 	def load(self):
 		def done(result):
@@ -191,10 +208,12 @@ class TasksPage(wx.Panel):
 			return
 
 		def done(task):
-			self.output.SetValue(task["output"] or "")
 			self.set_status(f"Showing task {task_id}, which is {task['status_text']}.")
-			self.output.SetFocus()
+			with TaskDialog(self.window, task) as dialog:
+				dialog.ShowModal()
+			self.previous.SetFocus()
 
+		self.set_status(f"Opening task {task_id}.")
 		self.window.worker.run(lambda: self.window.client.task(task_id), done)
 
 	def set_status(self, text):
@@ -594,39 +613,77 @@ class LogPage(wx.Panel):
 		self.window.worker.run(self.window.client.log, done)
 
 
+OPTION_LABELS = (
+	("model", "&Model"),
+	("effort", "&Thinking level"),
+	("speed", "S&peed"),
+	("summary", "Thinking s&ummaries, shown only with technical details"),
+	("verbosity", "Answer &length"),
+	("personality", "Perso&nality"),
+)
+
+
 class SettingsPage(wx.Panel):
 	def __init__(self, parent, window):
 		super().__init__(parent)
 		self.window = window
+		self.values = {}
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		self.details = wx.CheckBox(self, label="Show technical &details in Codex answers")
 		sizer.Add(self.details, 0, wx.ALL, 8)
 		help_text = wx.StaticText(self, label=(
 			"When this is on, the answer also shows the session number, the commands Codex runs with their output, "
-			"and the number of tokens used. When it is off, you only see what Codex writes to you, and errors. "
-			"The setting is shared with the website. It also applies to earlier tasks, except those that ran before "
-			"this setting existed, which always show everything. A task that is already running keeps the old setting."
+			"and the number of tokens used. When it is off, you only see what Codex writes to you, and errors."
 		))
 		help_text.Wrap(600)
 		sizer.Add(help_text, 0, wx.ALL, 8)
+		self.choices = {}
+		for name, label in OPTION_LABELS:
+			self.choices[name] = labelled(self, sizer, label, lambda: wx.Choice(self), False)
+		note = wx.StaticText(self, label=(
+			"The Codex choices apply to new tasks, and a running task keeps the choices it started with. "
+			"Higher thinking levels and Fast speed can use more of your usage limit. All settings are shared with the website."
+		))
+		note.Wrap(600)
+		sizer.Add(note, 0, wx.ALL, 8)
+		row = wx.BoxSizer(wx.HORIZONTAL)
 		self.save = wx.Button(self, label="&Save settings")
 		self.save.Bind(wx.EVT_BUTTON, self.on_save)
-		sizer.Add(self.save, 0, wx.ALL, 8)
+		reload_button = wx.Button(self, label="&Reload settings")
+		reload_button.Bind(wx.EVT_BUTTON, lambda event: self.load())
+		row.Add(self.save, 0, wx.ALL, 4)
+		row.Add(reload_button, 0, wx.ALL, 4)
+		sizer.Add(row, 0, wx.ALL, 4)
 		self.SetSizer(sizer)
 
-	def load(self):
-		def done(result):
-			self.details.SetValue(bool(result["details"]))
+	def show(self, result):
+		self.details.SetValue(bool(result["details"]))
+		options = result.get("options") or {}
+		for name, choice in self.choices.items():
+			entries = result.get("choices", {}).get(name) or [{"value": "", "label": "Default"}]
+			self.values[name] = [entry["value"] for entry in entries]
+			choice.Set([entry["label"] for entry in entries])
+			current = options.get(name, "")
+			choice.SetSelection(self.values[name].index(current) if current in self.values[name] else 0)
+		if not result.get("models_available", True):
+			self.window.set_status("The list of models could not be loaded from Codex, so only the current choices are shown.")
+		self.Layout()
 
-		self.window.worker.run(self.window.client.settings, done)
+	def load(self):
+		self.window.worker.run(self.window.client.settings, self.show)
 
 	def on_save(self, event):
 		details = self.details.GetValue()
+		options = {}
+		for name, choice in self.choices.items():
+			index = choice.GetSelection()
+			values = self.values.get(name, [])
+			options[name] = values[index] if 0 <= index < len(values) else ""
 		self.save.Disable()
 
 		def done(result):
 			self.save.Enable()
-			self.details.SetValue(bool(result["details"]))
+			self.show(result)
 			self.window.set_status(result["message"])
 			wx.MessageBox(result["message"], APP_NAME, wx.OK | wx.ICON_INFORMATION, self)
 
@@ -634,7 +691,7 @@ class SettingsPage(wx.Panel):
 			self.save.Enable()
 			self.window.show_error(message)
 
-		self.window.worker.run(lambda: self.window.client.save_settings(details), done, failed)
+		self.window.worker.run(lambda: self.window.client.save_settings(details, options), done, failed)
 
 
 class MainWindow(wx.Frame):

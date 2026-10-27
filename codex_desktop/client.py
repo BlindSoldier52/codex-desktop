@@ -93,8 +93,8 @@ class Client:
 	def settings(self):
 		return self.request("GET", "/api/settings")
 
-	def save_settings(self, details):
-		return self.request("PUT", "/api/settings", {"details": details})
+	def save_settings(self, details, options):
+		return self.request("PUT", "/api/settings", {"details": details, "options": options})
 
 	def start(self, prompt):
 		return self.request("POST", "/api/tasks", {"prompt": prompt})["id"]

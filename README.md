@@ -39,7 +39,7 @@ Task for Codex: the box where you write what Codex should do. Alt T jumps here.
 Submit task: sends the task. Alt S. While a task runs, this button is unavailable, because Codex works on one task at a time.
 Stop task: stops the task that is running. Alt O.
 Codex answer: the answer, which grows as Codex works. Alt A jumps here, and you can read it with the arrow keys like any text.
-Previous tasks: the last 20 tasks. Select one and press Enter to show its answer in the Codex answer box. Alt P.
+Previous tasks: the last 20 tasks. Select one and press Enter, or double-click it, to open a window with its details: the status with the times it was submitted and finished, your request, and the Codex answer. The window opens on the answer, so you can read it straight away, and Escape closes it. If the task is still running, Enter moves you to the Codex answer box instead, where the answer keeps growing. Alt P.
 Refresh previous tasks: reloads the list. Alt R.
 
 When a task finishes, the app plays a sound and shows the result in the status bar. If the window is not active, it also shows a Windows notification, so you can do something else while Codex works. If you close the app while a task runs, the task keeps running on the server, and the app follows it again the next time you open it.
@@ -73,10 +73,19 @@ This tab shows the same log as the website, newest first, with sign-ins, tasks, 
 
 ### 3.5 Settings
 
-This tab has the same setting as the Settings page on the website, and changing it in one place changes it in the other.
+This tab has the same settings as the Settings page on the website, and changing them in one place changes them in the other. The lists of models and thinking levels come from Codex on the server, so they stay up to date when OpenAI adds new models. Every list starts with a default choice, which leaves the decision to Codex.
 
-Show technical details in Codex answers: when this is ticked, the answer also shows the session number, the commands Codex runs with their output, and the number of tokens used. When it is not ticked, you only see what Codex writes to you, and errors. Alt D jumps here.
-Save settings: saves the choice on the server. Alt S. A task that is already running keeps the old setting until it finishes.
+Show technical details in Codex answers: when this is ticked, the answer also shows the session number, the commands Codex runs with their output, and the number of tokens used. When it is not ticked, you only see what Codex writes to you, and errors. Alt D.
+Model: the model Codex uses for new tasks. Alt M.
+Thinking level: how long the model thinks before it answers. Higher levels are slower and use more of your usage limit. Not every model supports every level, and saving tells you if the chosen model does not. Alt T.
+Speed: Standard or Fast. Fast answers about 1.5 times faster, and on some models it also uses more of your usage limit. Alt P.
+Thinking summaries: short summaries of how Codex thinks, which you only see when technical details are shown. Alt U.
+Answer length: how long and detailed the answers are. Alt L.
+Personality: the tone Codex uses when it writes to you. Alt N.
+Save settings: saves everything on the server. Alt S.
+Reload settings: reads the settings again from the server, for example after you changed them on the website. Alt R.
+
+The Codex choices apply to new tasks. A task that is already running keeps the choices it started with until it finishes.
 
 ## 4. Unpairing and lost computers
 
