@@ -54,7 +54,7 @@ Refresh: reloads the list.
 Download file: downloads the selected file to a place you choose.
 Download folder of the selected file: downloads the folder that contains the selected file, as a zip file. The app shows the folder path first, so you can shorten it to download a bigger folder.
 Download everything: downloads the whole working folder as a zip file.
-Upload file: sends one file of up to 2 GB. If it is a zip or tar archive, the server extracts it into a new folder, the same as the website does.
+Upload file: sends one file of up to 20 GB. If it is a zip or tar archive, the server extracts it into a new folder, the same as the website does.
 Upload folder: sends a whole folder from your computer, with all its subfolders, into a folder with the same name on the server. Files that already exist there are replaced, so you can send an updated version of a project the same way. Archives inside the folder are not extracted, so your project stays exactly as it is. The folders `__pycache__`, `node_modules`, `.venv`, `venv`, `.mypy_cache` and `.pytest_cache` are skipped, because they are large and can be rebuilt.
 
 Uploads and downloads show a progress window, which you can cancel.

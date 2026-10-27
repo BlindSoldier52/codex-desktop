@@ -49,7 +49,7 @@ class Client:
 		except ValueError:
 			message = None
 		if response.status == 413 and not message:
-			message = "The file is larger than the 2 GB limit, so it was not accepted."
+			message = "The file is larger than the server's upload limit, so it was not accepted."
 		message = message or f"The server answered with an error ({response.status})."
 		if response.status == 401:
 			raise Unpaired(message, 401)

@@ -15,7 +15,7 @@ from .storage import Pairing
 
 APP_NAME = "Codex Desktop"
 DEFAULT_SERVER = "https://codex.gaming-space.site"
-MAX_UPLOAD = 2 * 1024 ** 3
+MAX_UPLOAD = 20 * 1024 ** 3
 SKIPPED_FOLDERS = {"__pycache__", "node_modules", ".venv", "venv", ".mypy_cache", ".pytest_cache"}
 
 
@@ -29,6 +29,10 @@ def size_text(number):
 		if value < 1024 or unit == "TB":
 			return f"{value:.0f} {unit}" if unit == "B" else f"{value:.1f} {unit}"
 		value /= 1024
+
+
+def gigabytes(number):
+	return f"{number // 1024 ** 3} GB"
 
 
 def labelled(parent, sizer, label, create, expand=True):
@@ -413,8 +417,9 @@ class FilesPage(wx.Panel):
 			if dialog.ShowModal() != wx.ID_OK:
 				return
 			local = dialog.GetPath()
-		if os.path.getsize(local) > MAX_UPLOAD:
-			self.window.show_error("The file is larger than the 2 GB limit, so it was not sent.")
+		limit = self.window.max_upload
+		if os.path.getsize(local) > limit:
+			self.window.show_error(f"The file is larger than the {gigabytes(limit)} limit, so it was not sent.")
 			return
 		client = self.window.client
 
@@ -432,6 +437,7 @@ class FilesPage(wx.Panel):
 			if dialog.ShowModal() != wx.ID_OK:
 				return
 			local = Path(dialog.GetPath())
+		limit = self.window.max_upload
 		files = []
 		too_big = []
 		for directory, subdirectories, names in os.walk(local):
@@ -440,7 +446,7 @@ class FilesPage(wx.Panel):
 				full = Path(directory) / name
 				if full.is_symlink():
 					continue
-				if full.stat().st_size > MAX_UPLOAD:
+				if full.stat().st_size > limit:
 					too_big.append(str(full.relative_to(local)))
 					continue
 				files.append(full)
@@ -474,7 +480,7 @@ class FilesPage(wx.Panel):
 					raise ServerError("The upload was cancelled.")
 			message = f"Uploaded {len(files)} files from {local.name}."
 			if too_big:
-				message += f" {len(too_big)} files were skipped because they are larger than 2 GB."
+				message += f" {len(too_big)} files were skipped because they are larger than {gigabytes(limit)}."
 			return message
 
 		self.transfer("Uploading folder", job)
@@ -695,6 +701,7 @@ class MainWindow(wx.Frame):
 	def __init__(self, client):
 		super().__init__(None, title=APP_NAME, size=(900, 700))
 		self.client = client
+		self.max_upload = MAX_UPLOAD
 		self.worker = Worker(self)
 		self.CreateStatusBar()
 		menu = wx.MenuBar()
@@ -720,6 +727,7 @@ class MainWindow(wx.Frame):
 
 	def check_connection(self):
 		def done(status):
+			self.max_upload = status.get("max_upload") or MAX_UPLOAD
 			self.set_status(f"Connected as {status['device']}.")
 			self.load_page(0)
 
