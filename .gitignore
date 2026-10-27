@@ -1,0 +1,10 @@
+.venv/
+build/
+dist/
+package/
+__pycache__/
+*.spec
+*.zip
+*.build/
+*.dist/
+*.onefile-build/
