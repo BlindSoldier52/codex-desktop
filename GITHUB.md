@@ -55,6 +55,8 @@ The next times, the project is already in the working folder, so you can start f
 
 Asking Codex to pull first matters, because you may have pushed changes of your own since its last task. Without the pull, its push would be refused.
 
+Codex also remembers the conversation, as long as Continue the previous conversation is ticked under the task box on the website or in Codex Desktop. So after a task you can simply answer it, for example "Yes, do that, then commit and push it", and Codex knows which project and which change you mean. When you move on to something unrelated, untick the box for that task, so Codex starts a new conversation and does not mix the two.
+
 Codex works directly on main, so its changes reach your main code as soon as it pushes them. To get them on your computer, you do not need to clone again. Run `git pull` in the folder you already cloned, or let Codex Desktop do it for you after every task. Section 4 of README.md explains how to set that up.
 
 If you ever want to look at a change before it reaches main, ask Codex to push it on a new branch instead, for example "commit it on a new branch called volume-option and push the branch". On GitHub you can then open a pull request from that branch, read exactly what changed, and merge it only if you are happy with it.
