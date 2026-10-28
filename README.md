@@ -36,6 +36,7 @@ The main window has six tabs. Press Control Tab to move between them. Every fiel
 This tab is where you talk to Codex. It contains the following.
 
 Task for Codex: the box where you write what Codex should do. Alt T jumps here.
+Continue the previous conversation: when this is ticked, Codex remembers what you wrote in the earlier tasks of the conversation, so you can answer it or ask for more without repeating yourself. Untick it to start a new conversation, where Codex knows nothing about earlier tasks. It is ticked at the start and again after each task, so the next task continues the new conversation. Alt N.
 Submit task: sends the task. Alt S. While a task runs, this button is unavailable, because Codex works on one task at a time.
 Stop task: stops the task that is running. Alt O.
 Codex answer: the answer, which grows as Codex works. Alt A jumps here, and you can read it with the arrow keys like any text.

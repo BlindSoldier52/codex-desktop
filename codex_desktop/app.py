@@ -145,6 +145,8 @@ class TaskDialog(wx.Dialog):
 		lines = [f"Task {task['id']} is {task['status_text']}.", f"Submitted at {when(task['created'])}."]
 		if task.get("finished"):
 			lines.append(f"Finished at {when(task['finished'])}.")
+		if task.get("previous"):
+			lines.append(f"It continued the conversation of task {task['previous']}.")
 		self.summary = labelled(self, sizer, "&Status", lambda: wx.TextCtrl(self, value=" ".join(lines), style=wx.TE_READONLY), False)
 		self.request = labelled(self, sizer, "&Request", lambda: wx.TextCtrl(self, value=task["prompt"], style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2, size=(-1, 110)), False)
 		self.answer = labelled(self, sizer, "Codex &answer", lambda: wx.TextCtrl(self, value=task["output"] or "", style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2))
@@ -165,6 +167,9 @@ class TasksPage(wx.Panel):
 		self.history = []
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		self.prompt = labelled(self, sizer, "&Task for Codex", lambda: wx.TextCtrl(self, style=wx.TE_MULTILINE, size=(-1, 120)), False)
+		self.continuing = wx.CheckBox(self, label="Co&ntinue the previous conversation")
+		self.continuing.SetValue(True)
+		sizer.Add(self.continuing, 0, wx.LEFT | wx.RIGHT, 8)
 		row = wx.BoxSizer(wx.HORIZONTAL)
 		self.submit = wx.Button(self, label="&Submit task")
 		self.stop = wx.Button(self, label="St&op task")
@@ -228,22 +233,24 @@ class TasksPage(wx.Panel):
 			self.window.show_error("Write a task first.")
 			self.prompt.SetFocus()
 			return
+		continuing = self.continuing.GetValue()
 		self.submit.Disable()
 		self.set_status("Submitting the task.")
 
-		def done(task_id):
+		def done(result):
 			self.prompt.SetValue("")
 			self.output.SetValue("")
-			self.follow(task_id)
+			self.continuing.SetValue(True)
+			self.follow(result["id"], message=result.get("message"))
 
 		def failed(message):
 			self.submit.Enable()
 			self.set_status(message)
 			self.window.show_error(message)
 
-		self.window.worker.run(lambda: self.window.client.start(prompt), done, failed)
+		self.window.worker.run(lambda: self.window.client.start(prompt, continuing), done, failed)
 
-	def follow(self, task_id, resume=False):
+	def follow(self, task_id, resume=False, message=None):
 		self.task_id = task_id
 		self.received = 0
 		self.stop_stream = False
@@ -251,7 +258,7 @@ class TasksPage(wx.Panel):
 		self.stop.Enable()
 		if resume:
 			self.output.SetValue("")
-		self.set_status(f"Codex is working on task {task_id}.")
+		self.set_status(message or f"Codex is working on task {task_id}.")
 		threading.Thread(target=self.stream, args=(task_id,), daemon=True).start()
 
 	def stream(self, task_id):
